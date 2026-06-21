@@ -203,7 +203,13 @@ BLIP 모델을 이용하여 작품 설명 문장을 생성한다.
 검색을 위한 벡터 인덱스를 생성한다.
 
 ```
-BLIP Caption → OpenCLIP Text Encoder → Vector Embedding → FAISS Index
+작품 이미지 + BLIP/메타데이터 텍스트
+↓
+OpenCLIP Image/Text Encoder
+↓
+하이브리드 벡터 생성
+↓
+FAISS Index
 ```
 
 출력: `artifacts/met.index`
