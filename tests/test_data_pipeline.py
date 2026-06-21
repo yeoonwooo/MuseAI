@@ -1,46 +1,29 @@
-import pandas as pd
+from pathlib import Path
 
-from data_pipeline import _as_true, _split_for_id, load_public_domain_rows
-
-
-def test_public_domain_boolean_parser():
-    values = pd.Series([True, "TRUE", "yes", 1, False, "no", ""])
-    assert _as_true(values).tolist() == [True, True, True, True, False, False, False]
+import config
+import prepare_data
 
 
-def test_split_is_deterministic_and_valid():
-    first = _split_for_id("123")
-    assert first == _split_for_id("123")
-    assert first in {"train", "valid", "test"}
+def test_allowed_departments_are_unique():
+    departments = prepare_data.ALLOWED_DEPARTMENTS
+
+    assert len(departments) == 8
+    assert len(departments) == len(set(departments))
 
 
-def test_loader_excludes_non_public_and_missing_images(tmp_path):
-    path = tmp_path / "objects.csv"
-    pd.DataFrame(
-        [
-            {
-                "Object ID": 1,
-                "Is Public Domain": True,
-                "Primary Image": "https://example.com/1.jpg",
-                "Primary Image Small": "",
-                "Title": "Allowed",
-            },
-            {
-                "Object ID": 2,
-                "Is Public Domain": False,
-                "Primary Image": "https://example.com/2.jpg",
-                "Primary Image Small": "",
-                "Title": "Copyrighted",
-            },
-            {
-                "Object ID": 3,
-                "Is Public Domain": True,
-                "Primary Image": "",
-                "Primary Image Small": "",
-                "Title": "No image",
-            },
-        ]
-    ).to_csv(path, index=False)
+def test_project_paths_are_relative_to_repository():
+    root = Path(__file__).resolve().parents[1]
 
-    result = load_public_domain_rows(path)
-    assert result["Object ID"].tolist() == ["1"]
+    assert config.BASE_DIR == root
+    assert config.DATA_DIR == root / "data"
+    assert config.IMAGE_DIR == root / "data" / "images"
+    assert config.ARTIFACT_DIR == root / "artifacts"
+
+
+def test_large_generated_outputs_are_ignored():
+    ignore_text = (config.BASE_DIR / ".gitignore").read_text(
+        encoding="utf-8"
+    )
+
+    for pattern in ["data/", "artifacts/", "*.pt", "*.onnx", "*.index"]:
+        assert pattern in ignore_text

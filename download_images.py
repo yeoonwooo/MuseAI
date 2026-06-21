@@ -116,7 +116,7 @@ def main():
 
             row_dict["image_path"] = str(save_path)
 
-            row_dict["image_url"] = image_url
+            row_dict["image_url"] = ""
 
             row_dict["met_url"] = (
                 f"https://www.metmuseum.org/art/collection/search/{object_id}"
@@ -148,6 +148,12 @@ def main():
 
             row_dict["image_path"] = str(
                 save_path
+            )
+
+            row_dict["image_url"] = image_url
+
+            row_dict["met_url"] = (
+                f"https://www.metmuseum.org/art/collection/search/{object_id}"
             )
 
             valid_rows.append(

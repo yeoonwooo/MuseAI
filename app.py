@@ -84,6 +84,11 @@ def load_model():
 @st.cache_resource
 def load_index():
 
+    if not config.INDEX_PATH.exists():
+        raise FileNotFoundError(
+            "FAISS 인덱스가 없습니다. python build_index.py를 먼저 실행하세요."
+        )
+
     return faiss.read_index(
         str(config.INDEX_PATH)
     )
@@ -100,10 +105,18 @@ def load_metadata():
     ]
 
     metadata_path = next(
-        path
-        for path in metadata_candidates
-        if path.exists()
+        (
+            path
+            for path in metadata_candidates
+            if path.exists()
+        ),
+        None
     )
+
+    if metadata_path is None:
+        raise FileNotFoundError(
+            "메타데이터 파일이 없습니다. 데이터 구축 파이프라인을 먼저 실행하세요."
+        )
 
     return pd.read_csv(metadata_path)
 
@@ -305,7 +318,17 @@ def search(query, top_k=12):
     )[:top_k]
 
 
-meta = load_metadata()
+try:
+    meta = load_metadata()
+except FileNotFoundError as exc:
+    st.error(str(exc))
+    st.info(
+        "README의 재현 절차에 따라 "
+        "prepare_data.py → download_images.py → generate_captions.py → "
+        "build_index.py 순서로 실행한 뒤 앱을 다시 시작하세요."
+    )
+    st.stop()
+
 metrics = load_metrics()
 
 st.title("🏛 MuseAI Semantic Artwork Search")
@@ -397,7 +420,14 @@ st.caption(
 if query:
 
     start = time.perf_counter()
-    results = search(query, top_k=top_k)
+
+    try:
+        results = search(query, top_k=top_k)
+    except FileNotFoundError as exc:
+        st.error(str(exc))
+        st.info("python build_index.py를 실행한 뒤 다시 검색하세요.")
+        st.stop()
+
     elapsed = (time.perf_counter() - start) * 1000
 
     st.success(f"검색 시간: {elapsed:.1f} ms")
